@@ -1,8 +1,0 @@
-0.7
-2020.2
-Nov 18 2020
-09:47:47
-C:/Users/hkjac/EESM6000C_LAB/EESM6000C_LAB.sim/sim_1/behav/xsim/glbl.v,1605673889,verilog,,,,glbl,,,,,,,,
-C:/Users/hkjac/hkust-soc-lab/Lab3/bram/bram11.v,1740327045,verilog,,C:/Users/hkjac/hkust-soc-lab/Lab3/fir/rtl/fir.v,,bram11,,,,,,,,
-C:/Users/hkjac/hkust-soc-lab/Lab3/fir/rtl/fir.v,1742139944,verilog,,C:/Users/hkjac/hkust-soc-lab/Lab3/fir/tb/fir_tb.v,,fir,,,,,,,,
-C:/Users/hkjac/hkust-soc-lab/Lab3/fir/tb/fir_tb.v,1742140162,verilog,,,,fir_tb,,,,,,,,
