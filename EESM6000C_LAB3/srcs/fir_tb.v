@@ -147,7 +147,7 @@ module fir_tb
         @(posedge axis_clk); @(posedge axis_clk);
         axis_rst_n = 1;
     end
-
+    
     reg [31:0]  data_length;
     integer Din, golden, input_data, golden_data, m;
     initial begin
@@ -162,7 +162,11 @@ module fir_tb
     end
 
     integer i;
+    integer round2 = 0;
+    integer round3 = 0;
+    
     initial begin
+        //#1000;
         $display("------------Start simulation-----------");
         ss_tvalid = 0;
         $display("----Start the data input(AXI-Stream)----");
@@ -171,13 +175,51 @@ module fir_tb
         end
         config_read_check(12'h00, 32'h00, 32'h0000_000f); // check idle = 0
         ss_tlast = 1; ss(Din_list[(Data_Num-1)]);
+        
         $display("------End the data input(AXI-Stream)------");
+        round2 = 1;
+        ss_tvalid = 0;
+        
+        wait(round2 == 1);
+        
+        if (round2 > 0) begin 
+            $display("----Start the data input(AXI-Stream)----");
+            for(i=0;i<(data_length-1);i=i+1) begin
+                ss_tlast = 0; ss(Din_list[i]);
+            end
+            config_read_check(12'h00, 32'h00, 32'h0000_000f); // check idle = 0
+            ss_tlast = 1; ss(Din_list[(Data_Num-1)]);
+            $display("------End the data input(AXI-Stream)------");
+        end 
+        
+        
+        
+        axis_rst_n = 0;
+        @(posedge axis_clk); @(posedge axis_clk);
+        axis_rst_n = 1;
+        
+        ss_tvalid = 0;
+        round3 = 1;
+        
+        wait(round3 == 1);
+                
+        if (round3 > 0) begin 
+            $display("----Start the data input(AXI-Stream)----");
+            for(i=0;i<(data_length-1);i=i+1) begin
+                ss_tlast = 0; ss(Din_list[i]);
+            end
+            config_read_check(12'h00, 32'h00, 32'h0000_000f); // check idle = 0
+            ss_tlast = 1; ss(Din_list[(Data_Num-1)]);
+            $display("------End the data input(AXI-Stream)------");
+        end 
+
     end
 
     integer k;
     reg error;
     reg status_error;
     initial begin
+        //#1000;
         error = 0; status_error = 0;
         sm_tready = 1;
         wait (sm_tvalid);
@@ -186,19 +228,40 @@ module fir_tb
         end
         config_read_check(12'h00, 32'h02, 32'h0000_0002); // check ap_done = 1 (0x00 [bit 1])
         config_read_check(12'h00, 32'h04, 32'h0000_0004); // check ap_idle = 1 (0x00 [bit 2])
-        if (error == 0 & error_coef == 0) begin
-            $display("---------------------------------------------");
-            $display("-----------Congratulations! Pass-------------");
+        
+        wait(round2 == 1);
+        
+        if(round2 > 0) begin
+            for(k=0;k < data_length;k=k+1) begin
+                sm(golden_list[k],k);
+            end
         end
-        else begin
-            $display("--------Simulation Failed---------");
+        
+        wait(round3 == 1);
+        
+        if(round3 > 0) begin
+            for(k=0;k < data_length;k=k+1) begin
+                sm(golden_list[k],k);
+            end
+            
+            if (error == 0 & error_coef == 0) begin
+                $display("---------------------------------------------");
+                $display("-----------Congratulations! Pass-------------");
+            end
+            else begin
+                $display("--------Simulation Failed---------");
+            end
+            $finish;
         end
-        $finish;
+        
+        
+        
     end
 
     // Prevent hang
     integer timeout = (1000000);
     initial begin
+        //#1000;
         while(timeout > 0) begin
             @(posedge axis_clk);
             timeout = timeout - 1;
@@ -225,14 +288,9 @@ module fir_tb
 
     reg error_coef;
     initial begin
+        //#1000;
         error_coef = 0;
-        $display("----Start the coefficient input(AXI-lite)----");
         config_write(12'h10, data_length);
-        for(k=0; k< Tape_Num; k=k+1) begin
-            config_write(12'h20+4*k, coef[k]);
-        end
-        awvalid <= 0; wvalid <= 0;
-        // read-back and check
         $display(" Check Coefficient ...");
         for(k=0; k < Tape_Num; k=k+1) begin
             config_read_check(12'h20+4*k, coef[k], 32'hffffffff);
@@ -242,8 +300,53 @@ module fir_tb
         $display(" Start FIR");
         @(posedge axis_clk) config_write(12'h00, 32'h0000_0001);    // ap_start = 1
         $display("----End the coefficient input(AXI-lite)----");
+        
+        wait(round2 == 1);
+        
+        if (round2 > 0) begin 
+            $display("----Start the coefficient input(AXI-lite)----");
+            for(k=0; k< Tape_Num; k=k+1) begin
+                config_write(12'h20+4*k, coef[k]);
+            end
+            
+            awvalid <= 0; wvalid <= 0;
+            // read-back and check
+            $display(" Check Coefficient ...");
+            for(k=0; k < Tape_Num; k=k+1) begin
+                config_read_check(12'h20+4*k, coef[k], 32'hffffffff);
+            end
+            arvalid <= 0;
+            $display(" Tape programming done ...");
+            $display(" Start FIR");
+            @(posedge axis_clk) config_write(12'h00, 32'h0000_0001);    // ap_start = 1
+            $display("----End the coefficient input(AXI-lite)----");
+        end 
+        
+        wait(round3 == 1);
+        
+        if (round3 > 0) begin 
+            $display("----Start the coefficient input(AXI-lite)----");
+            for(k=0; k< Tape_Num; k=k+1) begin
+                config_write(12'h20+4*k, coef[k]);
+            end
+            
+            awvalid <= 0; wvalid <= 0;
+            // read-back and check
+            $display(" Check Coefficient ...");
+            for(k=0; k < Tape_Num; k=k+1) begin
+                config_read_check(12'h20+4*k, coef[k], 32'hffffffff);
+            end
+            arvalid <= 0;
+            $display(" Tape programming done ...");
+            $display(" Start FIR");
+            @(posedge axis_clk) config_write(12'h00, 32'h0000_0001);    // ap_start = 1
+            $display("----End the coefficient input(AXI-lite)----");
+        end 
+        
+        $display("----Start the coefficient input(AXI-lite)----");
     end
-
+    
+    
     task config_write;
         input [11:0]    addr;
         input [31:0]    data;
